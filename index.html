@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Night Shift — Room Type Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="masthead">
+    <div class="masthead__mark" aria-hidden="true">
+      <span class="dot"></span>
+    </div>
+    <div>
+      <h1>Night Shift</h1>
+      <p>Listing signals in, room type out. Built for NYC Airbnb data.</p>
+    </div>
+    <div class="masthead__status" id="status-indicator">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">checking API…</span>
+    </div>
+  </header>
+
+  <main class="console">
+
+    <section class="panel panel--input">
+      <form id="predict-form" novalidate>
+
+        <fieldset>
+          <legend>Location</legend>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="latitude">Latitude</label>
+              <input type="number" id="latitude" name="latitude" step="0.000001" min="-90" max="90" value="40.7128" required>
+            </div>
+            <div class="field">
+              <label for="longitude">Longitude</label>
+              <input type="number" id="longitude" name="longitude" step="0.000001" min="-180" max="180" value="-73.9560" required>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="neighbourhood_group">Borough</label>
+              <select id="neighbourhood_group" name="neighbourhood_group" required>
+                <option value="Manhattan">Manhattan</option>
+                <option value="Brooklyn">Brooklyn</option>
+                <option value="Queens">Queens</option>
+                <option value="Bronx">Bronx</option>
+                <option value="Staten Island">Staten Island</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="neighbourhood">Neighbourhood</label>
+              <input type="text" id="neighbourhood" name="neighbourhood" list="neighbourhood-options" placeholder="e.g. Williamsburg" value="Williamsburg" required>
+              <datalist id="neighbourhood-options">
+                <option value="Williamsburg"><option value="Bedford-Stuyvesant"><option value="Harlem">
+                <option value="Astoria"><option value="Bushwick"><option value="Upper West Side">
+                <option value="Hell's Kitchen"><option value="Long Island City"><option value="Greenpoint">
+                <option value="East Village"><option value="Financial District"><option value="Flatbush">
+              </datalist>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Pricing &amp; stay</legend>
+          <div class="field-row">
+            <div class="field">
+              <label for="price">Price per night (USD)</label>
+              <input type="number" id="price" name="price" min="1" step="1" value="150" required>
+            </div>
+            <div class="field">
+              <label for="minimum_nights">Minimum nights</label>
+              <input type="number" id="minimum_nights" name="minimum_nights" min="1" max="365" step="1" value="3" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="availability_365">Availability (days / year)</label>
+            <input type="range" id="availability_365" name="availability_365" min="0" max="365" step="1" value="180" required>
+            <output id="availability_365_out" for="availability_365">180</output>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Host &amp; review activity</legend>
+          <div class="field-row">
+            <div class="field">
+              <label for="number_of_reviews">Total reviews</label>
+              <input type="number" id="number_of_reviews" name="number_of_reviews" min="0" step="1" value="24" required>
+            </div>
+            <div class="field">
+              <label for="reviews_per_month">Reviews per month</label>
+              <input type="number" id="reviews_per_month" name="reviews_per_month" min="0" step="0.01" value="1.2" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="calculated_host_listings_count">Host's total listings</label>
+            <input type="number" id="calculated_host_listings_count" name="calculated_host_listings_count" min="0" step="1" value="1" required>
+          </div>
+        </fieldset>
+
+        <button type="submit" id="submit-btn" class="submit-btn">
+          <span class="submit-btn__label">Run prediction</span>
+          <span class="submit-btn__sweep" aria-hidden="true"></span>
+        </button>
+
+      </form>
+    </section>
+
+    <section class="panel panel--output" id="output-panel">
+
+      <div class="scanline" id="scanline" aria-hidden="true"></div>
+
+      <div class="output-state" id="state-idle">
+        <p class="output-hint">Enter a listing's signals and run the prediction.</p>
+        <p class="output-hint output-hint--dim">The console reads coordinates, price, and activity to call the most likely room type.</p>
+      </div>
+
+      <div class="output-state output-state--hidden" id="state-loading">
+        <p class="output-hint">Reading signals…</p>
+      </div>
+
+      <div class="output-state output-state--hidden" id="state-error">
+        <p class="output-hint output-hint--error" id="error-text">Something went wrong.</p>
+      </div>
+
+      <div class="output-state output-state--hidden" id="state-result">
+        <p class="result-label">Predicted room type</p>
+        <h2 class="result-value" id="result-value">—</h2>
+        <p class="result-confidence" id="result-confidence"></p>
+
+        <div class="bars" id="bars"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="foot">
+    <p>Calls a local FastAPI instance at <code id="api-url-display">http://127.0.0.1:8000</code>. Change <code>API_URL</code> in script.js if your server runs elsewhere.</p>
+  </footer>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
